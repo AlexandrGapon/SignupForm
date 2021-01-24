@@ -1,32 +1,18 @@
-import React from 'react'
-import { Formik, Field, Form, ErrorMessage, useField } from 'formik'
+import React, { useState } from 'react'
+import { Formik, Form, useField } from 'formik'
 import * as Yup from 'yup'
+import './formStyles.css'
 
 const MyTextInput = ({ label, ...props }) => {
-    const [field, meta] = useField(props);
+
+    const [field, meta] = useField(props)
 
     return (
-        <>
+        <div className='input-container'>
             <label htmlFor={props.name}>{label}</label>
             <div>
-            <input className='text-input' {...field} {...props} />
+                <input {...field} {...props} />
             </div>
-            {meta.touched && meta.error ? (
-                <div className='error'>{meta.error}</div>
-            ) : null}
-        </>
-    )
-}
-
-const MyCheckbox = ({ children, ...props }) => {
-    const [field, meta] = useField({ ...props, type: 'checkbox' })
-
-    return (
-        <div>
-            <label className='checkbox'>
-                <input type='checkbox' {...field} {...props} />
-                {children}
-            </label>
             {meta.touched && meta.error ? (
                 <div className='error'>{meta.error}</div>
             ) : null}
@@ -34,18 +20,70 @@ const MyCheckbox = ({ children, ...props }) => {
     )
 }
 
-const MySelect = ({ label, ...props }) => {
-    const [field, meta] = useField(props)
+const MyCheckbox = ({ children, ...props }) => {
+
+    const [field, meta] = useField({ ...props, type: 'checkbox' })
 
     return (
-        <div>
-            <label htmlFor={props.name}>{label}</label>
-            <div>
-            <select {...field} {...props} />
-            </div>
+        <div className='checkbox-container'>
+            <input id='checkbox' type='checkbox' {...field} {...props} />
+            <label htmlFor='checkbox'>{children}</label>
             {meta.touched && meta.error ? (
-                <div className='error'>{meta.error}</div>
+                <div className='error checkbox-error'>{meta.error}</div>
             ) : null}
+        </div>
+    )
+}
+
+const MySelect = ({ arr, label, ...props }) => {
+
+    const [active, setActive] = useState(false)
+
+    const toggleActive = (active) => {
+        setActive(prev => !prev)
+    }
+
+    const [value, setValue] = useState('')
+
+    let optionValue = ''
+
+    for (let i = 0; i < arr.length; i++) {
+        for (let j = 0; j < arr[i].length; j++) {
+            if (arr[i][j] === value) {
+                optionValue = arr[i][j + 1]
+            }
+        }
+    }
+
+    return (
+        <div className='form-selector'>
+            <label className='select-container-label' htmlFor='select-container'>{label}</label>
+            <div id='select-container' className='container'>
+                <div className='select-box'>
+
+                    {active &&
+                        <div onClick={toggleActive} className='options-container'>
+
+                            {arr.map(p => {
+                                return (
+                                    <div key={p.id + 1} onClick={() => setValue(p[0])} className='option'>
+                                        <input type='radio' className='radio' id={p[0]} />
+                                        <label htmlFor={p[0]}>{p[1]}</label>
+                                    </div>
+                                )
+                            })
+                            }
+
+                        </div>}
+
+                    {!value ? (<div onClick={toggleActive} className={`selected ${active && 'active'}`}>
+                        {label}
+                    </div>) : (<div onClick={toggleActive} className={`selected ${active && 'active'} optionActive`}>
+                        {optionValue}
+                    </div>)
+                    }
+                </div>
+            </div>
         </div>
     )
 }
@@ -55,98 +93,116 @@ const initialValues = {
     userEmail: '',
     userPhoneNumber: '',
     language: '',
-    acceptedTerms: false
+    acceptedTerms: false,
 }
 
-const nameRegExpr = /^[a-zA-Zа-яА-Я\s-]/s
+const arr = [['rus', 'Русский'], ['eng', 'Английский'], ['chn', 'Китайский'], ['esp', 'Испанский']]
 
 const validation = Yup.object({
+
     userName: Yup.string()
-        .required(),
+        .matches(/^[a-zA-Zа-яА-Я -]+$/i, 'Введено не корректное значение')
+        .required('Поле обязательно для заполнения'),
 
     userPhoneNumber: Yup.string()
-        .required(),
+        // eslint-disable-next-line
+        .matches(/^(8|\+7)\-?\(?\d{3}\)?\-?\d{3}\-?\d{2}\-?\d{2}$/, 'Введено не корректное значение')
+        .required('Поле обязательно для заполнения'),
 
     userEmail: Yup.string()
         .email('Введено не корректное значение')
         .required('Поле обязательно для заполнения'),
 
     acceptedTerms: Yup.boolean()
-        .required()
-        .oneOf([true], 'Вы должны подтвердить принятие условий использования'),
-
-    language: Yup.string()
-        .oneOf(
-            ['rus', 'eng', 'chn', 'esp'],
-            'Не выбран язык'
-        )
         .required('Поле обязательно для заполнения')
-    
+        .oneOf([true], 'Вы должны подтвердить принятие условий использования'),
 })
 
-const submit = (values, {setSubmitting}) => {
+const submit = (values, { setSubmitting }) => {
+
     setTimeout(() => {
+
         alert(JSON.stringify(values, null, 2))
         setSubmitting(false)
     }, 400)
 }
 
-const checkValid = JSON.stringify(values)
-
 const SignupForm = () => {
+
     return (
-        <>
-            <h1>Регистрация</h1>
-            <label>Уже есть аккаунт? <a href='#'>Войти</a></label>
+        <div className={'form'}>
+            <div className='title-container'>
+                <div className='signup-title'>
+                    <h1>Регистрация</h1>
+                </div>
+                <div className='signup-description'>
+                    {/* eslint-disable-next-line */}
+                    <label>Уже есть аккаунт? </label> <a href='#'>Войти</a>
+                </div>
+            </div>
             <Formik
                 initialValues={initialValues}
                 validationSchema={validation}
                 onSubmit={submit}
             >
-                <Form >
-                    <div>
-                    <MyTextInput
-                        label='Имя'
-                        name='userName'
-                        type='text'
-                        placeholder='Введите Ваше имя'
-                        />
-                    </div>
-                    <div>
-                    <MyTextInput
-                        label='Email'
-                        name='userEmail'
-                        type='email'
-                        placeholder='Введите ваш email'
-                        />
-                    </div>
-                    <div>
-                    <MyTextInput
-                        label='Номер телефона'
-                        name='userPhoneNumber'
-                        type='tel'
-                        placeholder='Введите номер телефона'
-                        />
-                    </div>
-                    <div>
-                    <MySelect label='Язык' name='language'>
-                        <option value=''>Язык</option>
-                        <option value='rus'>Русский</option>
-                        <option value='eng'>Английский</option>
-                        <option value='chn'>Китайский</option>
-                        <option value='esp'>Испанский</option>
-                    </MySelect>
-                    </div>
-                    <div>
-                    <MyCheckbox name='acceptedTerms'>
-                        Принимаю <a href='#'>условия</a> использования
-                    </MyCheckbox>
-                    </div>
+                {({ isValid, dirty }) => (
+                    <Form >
+                        <div className='form-container'>
+                            <div className='inputs-container'>
 
-                    <button type='submit'>Зарегестрироваться</button>
-                </Form>
+                                <div className='flexOne'>
+                                    <div className='form-input-container'>
+                                        <MyTextInput
+                                            label='Имя'
+                                            name='userName'
+                                            type='text'
+                                            placeholder='Введите Ваше имя'
+                                        />
+                                    </div>
+                                    <div className='form-input-container'>
+                                        <MyTextInput
+                                            label='Email'
+                                            name='userEmail'
+                                            type='email'
+                                            placeholder='Введите ваш email'
+                                        />
+                                    </div>
+                                </div>
+                                <div className='flexTwo'>
+                                    <div className='form-input-container'>
+                                        <MyTextInput
+                                            label='Номер телефона'
+                                            name='userPhoneNumber'
+                                            type='tel'
+                                            placeholder='Введите номер телефона'
+                                        />
+                                    </div>
+
+                                    <div className='form-select-container'>
+                                        <MySelect label='Язык' arr={arr} name='languange' />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className='bot-container'>
+                                <div className='form-checkbox-container'>
+                                    <MyCheckbox name='acceptedTerms'>
+                                        {/* eslint-disable-next-line */}
+                                            Принимаю&ensp;<a href='#'>условия</a>&ensp;использования
+                                        </MyCheckbox>
+                                </div>
+
+
+                                <div className='button-container'>
+                                    <button type='submit' disabled={!isValid || !dirty} >Зарегестрироваться</button>
+                                </div>
+                            </div>
+                        </div>
+                    </Form>
+                )}
             </Formik>
-        </>
+
+        </div>
     )
 }
 
